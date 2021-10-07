@@ -18,7 +18,11 @@ import 'package:hmssdk_flutter/model/hms_update_listener.dart';
 import 'package:hundred_ms/meeting_controler.dart';
 import 'package:mobx/mobx.dart';
 
-class MeetingStore with Store implements HMSUpdateListener {
+part 'meeting_store.g.dart';
+
+class MeetingStore = MeetingStoreBase with _$MeetingStore;
+
+abstract class MeetingStoreBase with Store implements HMSUpdateListener {
   @observable
   bool isSpeakerOn = true;
 
@@ -69,13 +73,13 @@ class MeetingStore with Store implements HMSUpdateListener {
 
   @action
   void toggleSpeaker() {
-    print("toggleSpeaker");
+    debugPrint("toggleSpeaker");
     isSpeakerOn = !isSpeakerOn;
   }
 
   @action
   Future<void> toggleVideo() async {
-    print("toggleVideo ${isVideoOn}");
+    debugPrint("toggleVideo $isVideoOn");
     await meetingController.switchVideo(isOn: isVideoOn);
     // if(isVideoOn){
     //   meetingController.stopCapturing();
@@ -127,7 +131,7 @@ class MeetingStore with Store implements HMSUpdateListener {
     } else {
       tracks.insert(tracks.length, track);
     }
-    print("addTrack");
+    debugPrint("addTrack");
   }
 
   @action
@@ -160,7 +164,7 @@ class MeetingStore with Store implements HMSUpdateListener {
 
   @action
   void addMessage(HMSMessage message) {
-    this.messages.add(message);
+    messages.add(message);
   }
 
   @action
@@ -173,12 +177,12 @@ class MeetingStore with Store implements HMSUpdateListener {
   @override
   void onJoin({required HMSRoom room}) {
     if (Platform.isAndroid) {
-      print("members ${room.peers!.length}");
+      debugPrint("members ${room.peers!.length}");
       for (HMSPeer each in room.peers!) {
         if (each.isLocal) {
           localPeer = each;
           addPeer(localPeer!);
-          print('on join ${localPeer!.peerId}');
+          debugPrint('on join ${localPeer!.peerId}');
           break;
         }
       }
@@ -187,7 +191,7 @@ class MeetingStore with Store implements HMSUpdateListener {
         addPeer(each);
         if (each.isLocal) {
           localPeer = each;
-          print('on join ${localPeer!.name}  ${localPeer!.peerId}');
+          debugPrint('on join ${localPeer!.name}  ${localPeer!.peerId}');
           if (each.videoTrack != null) {
             tracks.insert(0, each.videoTrack!);
           }
@@ -202,7 +206,7 @@ class MeetingStore with Store implements HMSUpdateListener {
 
   @override
   void onRoomUpdate({required HMSRoom room, required HMSRoomUpdate update}) {
-    print('on room update');
+    debugPrint('on room update');
   }
 
   @override
@@ -215,17 +219,17 @@ class MeetingStore with Store implements HMSUpdateListener {
       {required HMSTrack track,
         required HMSTrackUpdate trackUpdate,
         required HMSPeer peer}) {
-    print("onTrackUpdateFlutter $track ${peer.isLocal}");
+    debugPrint("onTrackUpdateFlutter $track ${peer.isLocal}");
     if (track.kind == HMSTrackKind.kHMSTrackKindAudio) {
       audioTrackStatus[track.trackId] = trackUpdate;
       if (peer.isLocal && trackUpdate == HMSTrackUpdate.trackMuted) {
-        this.isMicOn = false;
+        isMicOn = false;
       }
       return;
     }
     trackStatus[track.trackId] = HMSTrackUpdate.trackMuted;
 
-    print("onTrackUpdate ${trackStatus[track.trackId]}");
+    debugPrint("onTrackUpdate ${trackStatus[track.trackId]}");
 
     if (peer.isLocal) {
       localPeer = peer;
@@ -234,7 +238,7 @@ class MeetingStore with Store implements HMSUpdateListener {
         int screenShareIndex = tracks.indexWhere((element) {
           return element.source == HMSTrackSource.kHMSTrackSourceScreen;
         });
-        print("ScreenShare $screenShareIndex");
+        debugPrint("ScreenShare $screenShareIndex");
         if (screenShareIndex == -1) {
           tracks.insert(0, track);
         } else {
@@ -310,7 +314,7 @@ class MeetingStore with Store implements HMSUpdateListener {
   int trackChange = -1;
 
   void changeTracks() {
-    print("flutteronChangeTracks $trackChange");
+    debugPrint("flutteronChangeTracks $trackChange");
     if (trackChange == 1) {
       toggleVideo();
     } else if (trackChange == 0) {
@@ -334,11 +338,11 @@ class MeetingStore with Store implements HMSUpdateListener {
   void peerOperation(HMSPeer peer, HMSPeerUpdate update) {
     switch (update) {
       case HMSPeerUpdate.peerJoined:
-        print('peer joined');
+        debugPrint('peer joined');
         addPeer(peer);
         break;
       case HMSPeerUpdate.peerLeft:
-        print('peer left');
+        debugPrint('peer left');
         removePeer(peer);
 
         break;
@@ -346,27 +350,27 @@ class MeetingStore with Store implements HMSUpdateListener {
       // removePeer(peer);
         break;
       case HMSPeerUpdate.audioToggled:
-        print('Peer audio toggled');
+        debugPrint('Peer audio toggled');
         break;
       case HMSPeerUpdate.videoToggled:
-        print('Peer video toggled');
+        debugPrint('Peer video toggled');
         break;
       case HMSPeerUpdate.roleUpdated:
-        print('${peers.indexOf(peer)}');
+        debugPrint('${peers.indexOf(peer)}');
         updatePeerAt(peer);
         break;
       case HMSPeerUpdate.defaultUpdate:
-        print("Some default update or untouched case");
+        debugPrint("Some default update or untouched case");
         break;
       default:
-        print("Some default update or untouched case");
+        debugPrint("Some default update or untouched case");
     }
   }
 
   @action
   void peerOperationWithTrack(
       HMSPeer peer, HMSTrackUpdate update, HMSTrack track) {
-    print("onTrackUpdateFlutter $update ${peer.isLocal} update");
+    debugPrint("onTrackUpdateFlutter $update ${peer.isLocal} update");
     switch (update) {
       case HMSTrackUpdate.trackAdded:
         addTrack(track);
@@ -387,7 +391,7 @@ class MeetingStore with Store implements HMSUpdateListener {
       case HMSTrackUpdate.defaultUpdate:
         break;
       default:
-        print("Some default update or untouched case");
+        debugPrint("Some default update or untouched case");
     }
   }
 

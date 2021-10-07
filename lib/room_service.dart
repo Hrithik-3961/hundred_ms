@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 
 import 'constants.dart';
@@ -7,7 +8,7 @@ import 'constants.dart';
 class RoomService {
   Future<List<String?>?> getToken({required String user, required String room}) async {
     List<String?> codeAndDomain = getCode(room)??[];
-    print(codeAndDomain);
+    debugPrint("$codeAndDomain");
     if(codeAndDomain.isEmpty){
       return null;
     }
@@ -23,13 +24,13 @@ class RoomService {
         });
 
     var body = json.decode(response.body);
-    print(body);
+    debugPrint(body);
     return [body['token'],codeAndDomain[2]!.trim()];
   }
 
   List<String?>? getCode(String roomUrl) {
     String url = roomUrl;
-    if(url==null)return [];
+
     url=url.trim();
     bool isProdM = url.contains(".app.100ms.live/meeting/");
     bool isProdP=url.contains(".app.100ms.live/preview/");
@@ -46,13 +47,13 @@ class RoomService {
       code = codeAndDomain[1];
       subDomain =
           codeAndDomain[0].split("https://")[1] + ".app.100ms.live";
-      print("$subDomain $code");
+      debugPrint("$subDomain $code");
     } else if (isQaM || isQaP) {
       codeAndDomain = isQaM ? url.split(".qa-app.100ms.live/meeting/") : url.split(".qa-app.100ms.live/preview/");
       code = codeAndDomain[1];
       subDomain =
           codeAndDomain[0].split("https://")[1] + ".qa-app.100ms.live";
-      print("$subDomain $code");
+      debugPrint("$subDomain $code");
     }
     return [subDomain, code,isProdM || isProdP ?"true":"false"];
   }

@@ -1,15 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:hmssdk_flutter/enum/hms_track_source.dart';
 import 'package:hmssdk_flutter/enum/hms_track_update.dart';
 import 'package:hmssdk_flutter/model/hms_track.dart';
 import 'package:hundred_ms/meeting_controler.dart';
 import 'package:hundred_ms/meeting_flow.dart';
 import 'package:hundred_ms/meeting_store.dart';
 import 'package:hundred_ms/peer_item_organisation.dart';
-import 'package:visibility_detector/visibility_detector.dart';
 
 class VideoCall extends StatefulWidget {
   final String userId;
@@ -29,117 +26,163 @@ class VideoCall extends StatefulWidget {
 
 class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
   late MeetingStore _meetingStore;
-  late ScrollController _scrollController;
 
   @override
   void initState() {
     WidgetsBinding.instance!.addObserver(this);
-    _scrollController = ScrollController();
     _meetingStore = MeetingStore();
-    MeetingController meetingController = MeetingController(roomUrl: widget.roomId, user: widget.userId, flow: widget.flow);
+    MeetingController meetingController = MeetingController(
+        roomUrl: widget.roomId, user: widget.userId, flow: widget.flow);
     _meetingStore.meetingController = meetingController;
 
     super.initState();
     joinCall();
   }
 
+  Future<dynamic> _onBackPressed() {
+    return showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+              title: const Text('Leave the Meeting?'),
+              actions: [
+                TextButton(
+                    onPressed: () => {
+                          _meetingStore.meetingController.leaveMeeting(),
+                          Navigator.pop(context, true),
+                        },
+                    child: const Text('Yes',
+                        style: TextStyle(height: 1, fontSize: 24))),
+                TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel',
+                        style: TextStyle(
+                            height: 1,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold))),
+              ],
+            ));
+  }
+
   void joinCall() async {
     bool ans = await _meetingStore.joinMeeting();
     if (!ans) {
-      print("Unable to Join !");
+      debugPrint("Unable to Join !");
       Navigator.of(context).pop();
+    } else {
+      debugPrint("Hoorah !!");
     }
-    else
-      print("Hoooorah !!");
     _meetingStore.startListen();
   }
 
   @override
   Widget build(BuildContext context) {
 
-    var orientation = MediaQuery.of(context).orientation;
-    var size = MediaQuery.of(context).size;
-    final double itemHeight = (size.height - kToolbarHeight - 24) / 2.5;
-    final double itemWidth = size.width / 2;
-    final aspectRatio = itemHeight / itemWidth;
+    return WillPopScope(
+      onWillPop: () async {
+        bool ans = await _onBackPressed();
+        return ans;
+      },
+      child: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: double.infinity,
+            child: Observer(
+              builder: (_) {
+                if (_meetingStore.tracks.isEmpty) {
+                  return const Center(
+                      child: Text('Waiting for other to join!'));
+                }
+                List<HMSTrack> filteredList = _meetingStore.tracks;
 
-    return Scaffold(
-      body: Center(
-        child: Container(
-          width: double.infinity,
-          child: Observer(
-            builder: (_) {
-              if (_meetingStore.tracks.isEmpty) {
-                return const Center(child: Text('Waiting for other to join!'));
-              }
-              List<HMSTrack> filteredList = _meetingStore.tracks;
-              return StaggeredGridView.count(
-                // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                //     crossAxisCount: 2),
-                crossAxisCount: 2,
-                controller: _scrollController,
-                //childAspectRatio: itemWidth / itemHeight,
-                staggeredTiles: List.generate(
-                  filteredList.length,
-                  (int index) => StaggeredTile.count(
-                      filteredList[index].source ==
-                              HMSTrackSource.kHMSTrackSourceScreen
-                          ? 2
-                          : 1,
-                      filteredList[index].source ==
-                              HMSTrackSource.kHMSTrackSourceScreen
-                          ? orientation == Orientation.portrait
-                              ? aspectRatio * 2 + 0.1
-                              : aspectRatio * 2 - 0.1
-                          : orientation == Orientation.portrait
-                              ? aspectRatio
-                              : aspectRatio * 2 - 0.1),
-                ),
-                children: List.generate(filteredList.length, (index) {
-                  return VisibilityDetector(
-                    onVisibilityChanged: (VisibilityInfo info) {
-                      var visiblePercentage = info.visibleFraction * 100;
-                      print(
-                          "$index  ${filteredList[index].peer!.name} lengthofFilteredList");
-                      String trackId = filteredList[index].trackId;
-                      print(filteredList[index].isMute);
-                      if (visiblePercentage <= 40) {
-                        _meetingStore.trackStatus[trackId] =
-                            HMSTrackUpdate.trackMuted;
-                      } else {
-                        /*_meetingStore.trackStatus[trackId] =
-                            filteredList[index].isMute
-                                ? HMSTrackUpdate.trackMuted
-                                : HMSTrackUpdate.trackUnMuted;*/
-                        print(_meetingStore.trackStatus[trackId]);
-                      }
-                      debugPrint(
-                          'Widget ${info.key} is $visiblePercentage% visible and index is ${index}');
-                    },
-                    key: Key(filteredList[index].trackId),
-                    child: InkWell(
-                      onLongPress: () {
-                        if (!filteredList[index].peer!.isLocal &&
-                            filteredList[index].source !=
-                                HMSTrackSource.kHMSTrackSourceScreen) {
+                switch (filteredList.length) {
+                  case 1:
+                    return Column(
+                      children: [videoView(filteredList[0])],
+                    );
 
-                        }
-                      },
-                      child: PeerItemOrganism(
-                          track: filteredList[index],
-                          isVideoMuted: filteredList[index].peer!.isLocal
-                              ? !_meetingStore.isVideoOn
-                              : (_meetingStore.trackStatus[
-                                      filteredList[index].trackId]) ==
-                                  HMSTrackUpdate.trackMuted),
-                    ),
-                  );
-                }),
-              );
-            },
+                  case 2:
+                    return Stack(
+                      children: [
+                        Column(
+                          children: [videoView(filteredList[1])],
+                        ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Container(
+                              margin: EdgeInsets.only(
+                                  bottom:
+                                      MediaQuery.of(context).size.height * 0.1,
+                                  right:
+                                      MediaQuery.of(context).size.width * 0.02),
+                              width: 112.5,
+                              height: 200,
+                              child: videoView(filteredList[0])),
+                        )
+                      ],
+                    );
+                  default:
+                    return const Center(
+                        child: Text('More than 2 persons not allowed!'));
+                }
+              },
+            ),
           ),
         ),
+        bottomNavigationBar: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              child: Observer(builder: (context) {
+                return IconButton(
+                    tooltip: 'Video',
+                    iconSize: 32,
+                    onPressed: () {
+                      _meetingStore.toggleVideo();
+                    },
+                    icon: Icon(_meetingStore.isVideoOn
+                        ? Icons.videocam
+                        : Icons.videocam_off));
+              }),
+            ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              child: Observer(builder: (context) {
+                return IconButton(
+                    tooltip: 'Audio',
+                    iconSize: 32,
+                    onPressed: () {
+                      _meetingStore.toggleAudio();
+                    },
+                    icon: Icon(
+                        _meetingStore.isMicOn ? Icons.mic : Icons.mic_off));
+              }),
+            ),
+            Container(
+              padding: const EdgeInsets.all(8),
+              child: IconButton(
+                  tooltip: 'Leave Or End',
+                  iconSize: 32,
+                  onPressed: () async {
+                    _meetingStore.leaveMeeting();
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.call_end)),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget videoView(HMSTrack track) {
+    return Expanded(
+      child: PeerItemOrganism(
+          track: track,
+          isVideoMuted: track.peer!.isLocal
+              ? !_meetingStore.isVideoOn
+              : (_meetingStore.trackStatus[track.trackId]) ==
+                  HMSTrackUpdate.trackMuted),
     );
   }
 
@@ -160,5 +203,4 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
       }
     }
   }
-
 }
