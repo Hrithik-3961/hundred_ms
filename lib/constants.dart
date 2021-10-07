@@ -1,0 +1,12 @@
+class Constant {
+  static String defaultRoomID = "615c83aafdb33b950956c64d	";
+
+  static String hostToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2Nlc3Nfa2V5IjoiNjE1YzgzNmJjY2Q1ODIxNTI0MDYwNjI3Iiwicm9vbV9pZCI6IjYxNWM4M2FhZmRiMzNiOTUwOTU2YzY0ZCIsInVzZXJfaWQiOiJhaGxzbGhhayIsInJvbGUiOiJob3N0IiwianRpIjoiZWFiMTE4OWUtNTU0ZC00YTI1LWIzYTYtODg1ODFkYjVlZDBkIiwidHlwZSI6ImFwcCIsInZlcnNpb24iOjIsImV4cCI6MTYzMzY4OTk3Mn0.VyOfxBltBYUw2hFeRDdk9DcC3nqAuRHgtk94SbmtNdE";
+
+  static String guestToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJhY2Nlc3Nfa2V5IjoiNjE1YzgzNmJjY2Q1ODIxNTI0MDYwNjI3Iiwicm9vbV9pZCI6IjYxNWM4M2FhZmRiMzNiOTUwOTU2YzY0ZCIsInVzZXJfaWQiOiJvbGRibHNkaiIsInJvbGUiOiJndWVzdCIsImp0aSI6ImM4NDNmYzczLTk0MDAtNDkyNC04MGE3LWExNTNlNmY5M2YzMCIsInR5cGUiOiJhcHAiLCJ2ZXJzaW9uIjoyLCJleHAiOjE2MzM2MTgyNjV9.nOGjBcHEJJqPhWXwzTwxEJuV1P3oz54O-BIbXFEpjOI";
+
+  static String prodTokenEndpoint =
+      "https://prod-in.100ms.live/hmsapi/get-token";
+
+  static String qaTokenEndPoint = "https://qa-in.100ms.live/hmsapi/get-token";
+}
