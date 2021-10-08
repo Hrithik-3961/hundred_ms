@@ -81,12 +81,6 @@ abstract class MeetingStoreBase with Store implements HMSUpdateListener {
   Future<void> toggleVideo() async {
     debugPrint("toggleVideo $isVideoOn");
     await meetingController.switchVideo(isOn: isVideoOn);
-    // if(isVideoOn){
-    //   meetingController.stopCapturing();
-    // }
-    // else{
-    //   meetingController.startCapturing();
-    // }
     isVideoOn = !isVideoOn;
   }
 

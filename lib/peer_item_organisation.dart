@@ -39,22 +39,6 @@ class _PeerItemOrganismState extends State<PeerItemOrganism> {
         children: [
           Expanded(child: LayoutBuilder(
             builder: (context, constraints) {
-              if (widget.isVideoMuted) {
-                List<String> parts = widget.track.peer?.name.split(" ") ?? [];
-                if (parts.length == 1) {
-                  parts[0] += " ";
-                  name = parts[0][0] + parts[0][1];
-                } else if (parts.length >= 2) {
-                  name = parts[0][0];
-                  if (parts[1] == "" || parts[1] == " ") {
-                    name += parts[0][1];
-                  } else {
-                    name += parts[1][0];
-                  }
-                }
-                return Center(child: CircleAvatar(child: Text(name)));
-              }
-
               return VideoView(
                 track: widget.track,
               );

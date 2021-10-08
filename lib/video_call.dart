@@ -7,6 +7,7 @@ import 'package:hundred_ms/meeting_controler.dart';
 import 'package:hundred_ms/meeting_flow.dart';
 import 'package:hundred_ms/meeting_store.dart';
 import 'package:hundred_ms/peer_item_organisation.dart';
+import 'package:wakelock/wakelock.dart';
 
 class VideoCall extends StatefulWidget {
   final String userId;
@@ -34,33 +35,10 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
     MeetingController meetingController = MeetingController(
         roomUrl: widget.roomId, user: widget.userId, flow: widget.flow);
     _meetingStore.meetingController = meetingController;
+    Wakelock.enable();
 
     super.initState();
     joinCall();
-  }
-
-  Future<dynamic> _onBackPressed() {
-    return showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-              title: const Text('Leave the Meeting?'),
-              actions: [
-                TextButton(
-                    onPressed: () => {
-                          _meetingStore.meetingController.leaveMeeting(),
-                          Navigator.pop(context, true),
-                        },
-                    child: const Text('Yes',
-                        style: TextStyle(height: 1, fontSize: 24))),
-                TextButton(
-                    onPressed: () => Navigator.pop(context, false),
-                    child: const Text('Cancel',
-                        style: TextStyle(
-                            height: 1,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold))),
-              ],
-            ));
   }
 
   void joinCall() async {
@@ -96,16 +74,12 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
 
                 switch (filteredList.length) {
                   case 1:
-                    return Column(
-                      children: [videoView(filteredList[0])],
-                    );
+                    return videoView(filteredList[0]);
 
                   case 2:
                     return Stack(
                       children: [
-                        Column(
-                          children: [videoView(filteredList[1])],
-                        ),
+                        videoView(filteredList[1]),
                         Align(
                           alignment: Alignment.bottomRight,
                           child: Container(
@@ -164,8 +138,7 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
                   tooltip: 'Leave Or End',
                   iconSize: 32,
                   onPressed: () async {
-                    _meetingStore.leaveMeeting();
-                    Navigator.pop(context);
+                    await _onBackPressed();
                   },
                   icon: const Icon(Icons.call_end)),
             ),
@@ -176,13 +149,17 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
   }
 
   Widget videoView(HMSTrack track) {
-    return Expanded(
-      child: PeerItemOrganism(
-          track: track,
-          isVideoMuted: track.peer!.isLocal
-              ? !_meetingStore.isVideoOn
-              : (_meetingStore.trackStatus[track.trackId]) ==
-                  HMSTrackUpdate.trackMuted),
+    return Column(
+      children: [
+        Expanded(
+          child: PeerItemOrganism(
+              track: track,
+              isVideoMuted: track.peer!.isLocal
+                  ? !_meetingStore.isVideoOn
+                  : (_meetingStore.trackStatus[track.trackId]) ==
+                      HMSTrackUpdate.trackMuted),
+        ),
+      ],
     );
   }
 
@@ -203,4 +180,29 @@ class _VideoCallState extends State<VideoCall> with WidgetsBindingObserver {
       }
     }
   }
+
+  Future<dynamic> _onBackPressed() {
+    return showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Leave the Meeting?'),
+          actions: [
+            TextButton(
+                onPressed: () => {
+                  _meetingStore.meetingController.leaveMeeting(),
+                  Navigator.pop(context, true),
+                },
+                child: const Text('Yes',
+                    style: TextStyle(height: 1, fontSize: 24))),
+            TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel',
+                    style: TextStyle(
+                        height: 1,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold))),
+          ],
+        ));
+  }
+
 }
